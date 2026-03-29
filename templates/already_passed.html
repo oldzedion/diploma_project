@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script>
+            (function() {
+                let savedTheme = localStorage.getItem("theme");
+
+                if (savedTheme === "dark") {
+                    document.documentElement.classList.add("dark-mode");
+
+                    
+                    document.write('<style>body{background:#1e1e1e;color:#e0e0e0}</style>');
+                }
+            })();
+    </script>
+
+        <style>
+            html {background-color: #f4f6f8;}
+            html.dark-mode {background-color: #1e1e1e;}
+
+            /*ФІКС СПАЛАХУ КОНТЙЕНЕРА */
+            html.dark-mode .container {background-color: #000000; color: #e0e0e0;}
+        </style>
+
+    <title>Тест вже пройдено</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Тест вже пройдено</h2>
+
+    <p>Ви вже проходили цей тест.</p>
+    <p>Повторне проходження заборонено.</p>
+
+    <br>
+
+    <div class="buttons-column">
+
+        <a href="/results">
+            <button>Переглянути результати</button>
+        </a>
+
+        <a href="/">
+            <button>На головну</button>
+        </a>
+
+    </div>
+
+</div>
+
+<!-- 🌙 КНОПКА ТЕМИ -->
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<!-- JS -->
+<script>
+function toggleTheme() {
+    let html = document.documentElement;
+    let icon = document.getElementById("theme-icon");
+
+    html.classList.toggle("dark-mode");
+
+    if (html.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        if (icon) icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        if (icon) icon.textContent = "🌞";
+    }
+}
+
+// встановлення іконки при завантаженні (БЕЗ зміни теми)
+(function() {
+    let saved = localStorage.getItem("theme");
+    let icon = document.getElementById("theme-icon");
+
+    if (saved === "dark" && icon) {
+        icon.textContent = "🌙";
+    }
+})();
+</script>
+
+</body>
+</html>

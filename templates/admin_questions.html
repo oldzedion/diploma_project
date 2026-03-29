@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+    (function() {
+        let theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    })();
+</script>
+
+    <meta charset="UTF-8">
+    <title>Питання (Адмін)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="test-page">
+
+<div class="container">
+    <h2>Керування питаннями</h2>
+
+    <a href="/admin/dashboard">
+        <button>← Назад</button>
+    </a>
+
+    <a href="/admin/questions/add">
+        <button style="background: green;">+ Додати питання</button>
+    </a>
+
+    <br><br>
+
+    {% for q in questions %}
+        <div class="question-block">
+
+            <p><b>{{ loop.index }}. {{ q.text }}</b></p>
+
+            {% for opt in q.options %}
+                <p>
+                    {% if opt.is_correct %}
+                        ✔ {{ opt.text }}
+                    {% else %}
+                        • {{ opt.text }}
+                    {% endif %}
+                </p>
+            {% endfor %}
+
+            <br>
+
+            <a href="/admin/questions/edit/{{ q.id }}">
+                <button>✏️ Редагувати</button>
+            </a>
+
+            <button onclick="openDeleteModal({{ q.id }})" class="delete-btn">
+                Видалити
+            </button>
+            
+        </div>
+    {% endfor %}
+
+</div>
+
+<!-- 🌙 ТЕМА -->
+<div class="theme-toggle" id="themeToggle">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+const icon = document.getElementById("theme-icon");
+let savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark-mode");
+    icon.textContent = "🌙";
+}
+
+document.getElementById("themeToggle").onclick = function() {
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+};
+</script>
+
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <p>Ви впевнені, що хочете видалити це питання?</p>
+
+        <button id="confirmDelete">Видалити</button>
+        <button onclick="closeDeleteModal()" class="cancel">Скасувати</button>
+    </div>
+</div>
+
+<script>
+let deleteId = null;
+
+function openDeleteModal(id) {
+    deleteId = id;
+    document.getElementById("deleteModal").style.display = "flex";
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").style.display = "none";
+    deleteId = null;
+}
+
+document.getElementById("confirmDelete").addEventListener("click", function() {
+    if (deleteId !== null) {
+        window.location.href = "/admin/questions/delete/" + deleteId;
+    }
+});
+</script>
+
+</body>
+</html>

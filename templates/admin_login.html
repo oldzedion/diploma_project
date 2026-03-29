@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <script>
+        (function() {
+            let theme = localStorage.getItem("theme");
+            if (theme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+        })();
+    </script>
+
+    <title>Адмін логін</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Вхід для адміністратора</h2>
+
+    <form method="POST">
+        <label>Email:</label><br>
+        <input type="email" name="email" required><br>
+
+        <label>Пароль:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <button type="submit">Увійти</button>
+    </form>
+
+    <br>
+
+    <a href="/">
+        <button>Назад</button>
+    </a>
+</div>
+
+<!-- 🌙 ТЕМА -->
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+function toggleTheme() {
+    let icon = document.getElementById("theme-icon");
+
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+    let savedTheme = localStorage.getItem("theme");
+    let icon = document.getElementById("theme-icon");
+
+    if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark-mode");
+        icon.textContent = "🌙";
+    }
+});
+</script>
+
+</body>
+</html>

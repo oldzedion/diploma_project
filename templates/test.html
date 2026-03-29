@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <!-- тема до завантаження -->
+    <script>
+        (function() {
+            let theme = localStorage.getItem("theme");
+            if (theme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+        })();
+    </script>
+
+    <title>Тест</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="test-page">
+
+<div class="container">
+    <h2>Тестування</h2>
+
+    <h3 id="timer">60:00</h3>
+
+    <!--ПРОГРЕС-БАР -->
+    <div class="progress-bar">
+        <div id="progress"></div>
+    </div>
+
+    <form id="testForm" method="POST">
+        <input type="hidden" name="time_spent" id="time_spent">
+        <input type="hidden" name="violations" id="violations_input">
+        
+        {% for q in questions %}
+        {% set q_index = loop.index0 %}
+
+        <div class="question-block">
+
+            <p class="question-title">
+                {{ loop.index }}. {{ q.question }}
+            </p>
+
+            <!-- SINGLE -->
+            {% if q.type == "single" %}
+                {% for option in q.options %}
+                    <label class="option">
+                        <input type="radio" name="q{{ q_index }}" value="{{ option }}">
+                        {{ option }}
+                    </label>
+                {% endfor %}
+            {% endif %}
+
+            <!-- MULTIPLE -->
+            {% if q.type == "multiple" %}
+                {% for option in q.options %}
+                    <label class="option">
+                        <input type="checkbox" name="q{{ q_index }}" value="{{ option }}">
+                        {{ option }}
+                    </label>
+                {% endfor %}
+            {% endif %}
+
+            <!-- OPEN -->
+            {% if q.type == "open" %}
+                <input 
+                    type="text" 
+                    name="q{{ q_index }}" 
+                    class="open-input"
+                    placeholder="Введіть відповідь..."
+                >
+            {% endif %}
+
+            <!-- MATCHING -->
+            {% if q.type == "matching" %}
+                <p style="opacity:0.6;">(Питання на відповідність — скоро буде)</p>
+            {% endif %}
+
+        </div>
+        {% endfor %}
+
+        <button type="button" id="finishBtn">Завершити тест</button>
+    </form>
+</div>
+
+<!-- МОДАЛКА -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <p>Ви впевнені, що бажаєте завершити тест?</p>
+
+        <button id="confirmSubmit">Завершити</button>
+        <button id="cancelBtn" class="cancel">Повернутися</button>
+    </div>
+</div>
+
+<!-- МОДАЛКА ПОРУШЕННЯ -->
+<div id="warningModal" class="modal">
+    <div class="modal-content">
+        <p id="warningText"></p>
+
+        <button onclick="submitForm()">Завершити тест</button>
+        <button onclick="closeWarning()" class="cancel">Повернутися</button>
+    </div>
+</div>
+
+<!-- КНОПКА ТЕМИ -->
+<div class="theme-toggle" id="themeToggle">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+let totalTime = 3600; // дефолт
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    // ТЕМА 
+    const icon = document.getElementById("theme-icon");
+    let savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark-mode");
+        icon.textContent = "🌙";
+    }
+
+    document.getElementById("themeToggle").onclick = function() {
+        document.documentElement.classList.toggle("dark-mode");
+
+        if (document.documentElement.classList.contains("dark-mode")) {
+            localStorage.setItem("theme", "dark");
+            icon.textContent = "🌙";
+        } else {
+            localStorage.setItem("theme", "light");
+            icon.textContent = "🌞";
+        }
+    };
+
+    // ТАЙМЕР
+    let savedTimer = localStorage.getItem("timer");
+
+    if (savedTimer !== null && !isNaN(savedTimer)) {
+        totalTime = parseInt(savedTimer);
+    }
+
+    updateTimer(); // ВАЖЛИВО
+    setInterval(updateTimer, 1000);
+
+    // ВІДНОВЛЕННЯ ВІДПОВІДЕЙ 
+    document.querySelectorAll('input[type=radio]').forEach(radio => {
+        let saved = localStorage.getItem(radio.name);
+
+        if (saved === radio.value) {
+            radio.checked = true;
+        }
+
+        radio.addEventListener("change", () => {
+            localStorage.setItem(radio.name, radio.value);
+        });
+    });
+
+    // МОДАЛКА 
+    const modal = document.getElementById("confirmModal");
+
+    document.getElementById("finishBtn").addEventListener("click", function() {
+        modal.style.display = "flex";
+    });
+
+    document.getElementById("cancelBtn").addEventListener("click", function() {
+        modal.style.display = "none";
+    });
+
+    document.getElementById("confirmSubmit").addEventListener("click", function() {
+        submitForm();
+    });
+});
+
+// МОДАЛКА ПОПЕРЕДЖЕННЯ 
+let warningShown = false;
+
+// показ модалки
+function showWarning() {
+    if (!warningShown) {
+        document.getElementById("warningModal").style.display = "flex";
+        warningShown = true;
+    }
+}
+
+// закрити
+function closeWarning() {
+    document.getElementById("warningModal").style.display = "none";
+    warningShown = false;
+}
+
+// вихід з вкладки
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        showWarning();
+    }
+});
+
+// згортання / alt+tab
+window.addEventListener("blur", function() {
+    showWarning();
+});
+
+// лічильник порушень
+let violations = 0;
+
+
+//закриття модалки
+function closeWarning() {
+    document.getElementById("warningModal").style.display = "none";
+}
+
+//підключення до подій
+// вихід з вкладки
+document.addEventListener("visibilitychange", function() {
+    if (document.hidden) {
+        handleViolation();
+    }
+});
+
+// alt+tab / згортання
+window.addEventListener("blur", function() {
+    handleViolation();
+});
+
+//анти-спам
+let violationCooldown = false;
+
+//функція обробки порушень
+function handleViolation() {
+    if (violationCooldown) return;
+
+    violationCooldown = true;
+    setTimeout(() => violationCooldown = false, 2000);
+
+    violations++;
+
+    const modal = document.getElementById("warningModal");
+    const text = document.getElementById("warningText");
+
+    if (violations === 1) {
+        text.innerHTML = "⚠ Ви порушили правила тесту!<br>Залишилось 1 порушення до моментального завершення.";
+        modal.style.display = "flex";
+    }
+
+    else if (violations === 2) {
+        text.innerHTML = "⚠ Останнє попередження!<br>Наступне порушення завершить тест.";
+        modal.style.display = "flex";
+    }
+
+    else if (violations >= 3) {
+        submitForm();
+    }
+}
+
+// ТАЙМЕР
+function updateTimer() {
+    if (isNaN(totalTime)) totalTime = 3600;
+
+    let maxTime = 3600;
+
+    let minutes = Math.floor(totalTime / 60);
+    let seconds = totalTime % 60;
+
+    document.getElementById("timer").innerText =
+        minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+
+    // ПРОГРЕС-БАР
+    let percent = (totalTime / maxTime) * 100;
+    let progressBar = document.getElementById("progress");
+
+    progressBar.style.width = percent + "%";
+
+    // ЗМІНА КОЛЬОРУ
+    progressBar.classList.remove("warning", "danger");
+
+    if (percent < 50) {
+        progressBar.classList.add("warning");
+    }
+    if (percent < 20) {
+        progressBar.classList.add("danger");
+    }
+
+    if (totalTime <= 0) {
+        submitForm();
+    }
+
+    localStorage.setItem("timer", totalTime);
+    totalTime--;
+}
+
+// ВІДПРАВКА
+function submitForm() {
+    let timeUsed = (60 * 60) - totalTime;
+
+    document.getElementById("time_spent").value = timeUsed;
+
+    // ГАРАНТІЯ передачі порушень
+    let vInput = document.getElementById("violations_input");
+    if (vInput) {
+        vInput.value = violations;
+    }
+
+    // очистка
+    localStorage.removeItem("timer");
+    document.querySelectorAll('input[type=radio]').forEach(radio => {
+        localStorage.removeItem(radio.name);
+    });
+
+    document.getElementById("testForm").submit();
+}
+
+// БЛОКУВАННЯ КОМБІНАЦІЙ
+document.addEventListener("keydown", function(e) {
+
+    // Ctrl + C / V / U / S
+    if (e.ctrlKey && (
+        e.key === "c" ||
+        e.key === "v" ||
+        e.key === "u" ||
+        e.key === "s"
+    )) {
+        e.preventDefault();
+    }
+
+    // F12
+    if (e.key === "F12") {
+        e.preventDefault();
+    }
+});
+
+// ПКМ (right click)
+document.addEventListener("contextmenu", function(e) {
+    e.preventDefault();
+});
+
+// ВИДІЛЕННЯ ТЕКСТУ
+document.addEventListener("selectstart", function(e) {
+    e.preventDefault();
+});
+
+</script>
+
+<script>
+document.getElementById("testForm").addEventListener("submit", function() {
+    let timeUsed = (60 * 60) - totalTime;
+    document.getElementById("time_spent").value = timeUsed;
+});
+</script>
+
+
+</body>
+</html>

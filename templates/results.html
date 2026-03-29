@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script>
+        (function() {
+            let savedTheme = localStorage.getItem("theme");
+
+            if (savedTheme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+                document.write('<style>body{background:#1e1e1e;color:#e0e0e0}</style>');
+            }
+        })();
+    </script>
+
+    <style>
+        html {background-color: #f4f6f8;}
+        html.dark-mode {background-color: #1e1e1e;}
+        html.dark-mode .container {background-color: #000000; color: #e0e0e0;}
+    </style>
+
+    <title>Результати</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container wide">
+
+    <div class="header-row">
+        <h2>Результати тестування</h2>
+
+        <div class="sort-buttons">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Пошук ПІБ..."
+                onkeyup="searchByName()"
+            >
+
+            <button onclick="sortByScore()">⬇</button>
+            <button onclick="sortByName()">🔤</button>
+            <button onclick="filterPassed()">✔</button>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>ПІБ</th>
+                <th>Бали</th>
+                <th>Всього</th>
+                <th>%</th>
+                <th>Час</th>
+                <th>Порушення</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.id }}</td>
+                <td>{{ result.email }}</td>
+                <td>{{ result.fullname }}</td>
+                <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+                    {{ result.score }}
+                </td>
+                <td>{{ result.total }}</td>
+
+                <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+                    {% if result.total > 0 %}
+                    {{ (result.score / result.total * 100)|round(0) }}%
+                    {% else %}
+                     0%
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ (result.time_spent or 0) // 60 }} хв {{ (result.time_spent or 0) % 60 }} сек
+                </td>
+
+                <td>{{ result.violations }}</td>
+
+                <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+                    {% if result.total > 0 and (result.score / result.total * 100) >= 50 %}
+                        ✔ Складено
+                    {% else %}
+                        ✖ Не складено
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="buttons-column">
+        <a href="/download_pdf">
+            <button>Завантажити PDF звіт</button>
+        </a>
+
+        <a href="/">
+            <button>Повернутися до реєстрації</button>
+        </a>
+
+        <a href="/result">
+            <button>Назад</button>
+        </a>
+    </div>
+
+</div>
+
+<!-- ТЕМА -->
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+    let currentSort = null;
+    let currentOrder = null;
+    let originalRows = [];
+    let filterState = null; // null | 'pass' | 'fail'
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const rows = document.querySelectorAll("table tbody tr");
+        originalRows = Array.from(rows);
+    });
+
+function toggleTheme() {
+    let html = document.documentElement;
+    let icon = document.getElementById("theme-icon");
+
+    html.classList.toggle("dark-mode");
+
+    if (html.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+}
+
+// пошук
+function searchByName() {
+    let input = document.getElementById("searchInput").value.toLowerCase();
+    let rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        let name = row.cells[2].innerText.toLowerCase();
+        row.style.display = name.includes(input) ? "" : "none";
+    });
+}
+
+// сортування по балах
+function sortByScore() {
+    const tbody = document.querySelector("table tbody");
+    let rows = Array.from(tbody.rows);
+
+    if (currentSort === 'score') {
+        if (currentOrder === 'desc') {
+            // змінюємо напрям
+            rows.sort((a, b) => a.cells[3].innerText - b.cells[3].innerText);
+            currentOrder = 'asc';
+        } else {
+            // третій клік — скидання
+            originalRows.forEach(row => tbody.appendChild(row));
+            currentSort = null;
+            currentOrder = null;
+            return;
+        }
+    } else {
+        rows.sort((a, b) => b.cells[3].innerText - a.cells[3].innerText);
+        currentSort = 'score';
+        currentOrder = 'desc';
+    }
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// сортування по імені
+function sortByName() {
+    const tbody = document.querySelector("table tbody");
+    let rows = Array.from(tbody.rows);
+
+    if (currentSort === 'name') {
+        if (currentOrder === 'asc') {
+            rows.sort((a, b) =>
+                b.cells[2].innerText.localeCompare(a.cells[2].innerText)
+            );
+            currentOrder = 'desc';
+        } else {
+            originalRows.forEach(row => tbody.appendChild(row));
+            currentSort = null;
+            currentOrder = null;
+            return;
+        }
+    } else {
+        rows.sort((a, b) =>
+            a.cells[2].innerText.localeCompare(b.cells[2].innerText)
+        );
+        currentSort = 'name';
+        currentOrder = 'asc';
+    }
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// сортування склав, не склав
+function filterPassed() {
+    const rows = document.querySelectorAll("table tbody tr");
+
+    if (filterState === null) {
+        // 1 клік — тільки ті, хто склав
+        rows.forEach(row => {
+            let score = parseInt(row.cells[3].innerText);
+            let total = parseInt(row.cells[4].innerText);
+
+            let percent = total > 0 ? (score / total) * 100 : 0;
+
+            row.style.display = percent >= 50 ? "" : "none";
+        });
+
+        filterState = 'pass';
+
+    } else if (filterState === 'pass') {
+        // 2 клік — тільки ті, хто НЕ склав
+        rows.forEach(row => {
+            let score = parseInt(row.cells[3].innerText);
+            let total = parseInt(row.cells[4].innerText);
+
+            let percent = total > 0 ? (score / total) * 100 : 0;
+
+            row.style.display = percent < 50 ? "" : "none";
+        });
+
+        filterState = 'fail';
+
+    } else {
+        // 3 клік — показати всіх
+        rows.forEach(row => {
+            row.style.display = "";
+        });
+
+        filterState = null;
+    }
+}
+</script>
+
+</body>
+</html>

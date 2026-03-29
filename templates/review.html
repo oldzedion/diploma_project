@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script>
+        (function() {
+            let savedTheme = localStorage.getItem("theme");
+
+            if (savedTheme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+                document.write('<style>body{background:#1e1e1e;color:#e0e0e0}</style>');
+            }
+        })();
+    </script>
+
+    <style>
+        html {background-color: #f4f6f8;}
+        html.dark-mode {background-color: #1e1e1e;}
+        html.dark-mode .container {background-color: #000000; color: #e0e0e0;}
+        .correct { color: green; }
+        .wrong { color: red; }
+    </style>
+
+    <title>Перегляд тесту</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Перегляд відповідей</h2>
+
+    {% for q in questions %}
+        {% set i = loop.index0 %}
+        <div class="question-block">
+            <p><b>{{ q.question }}</b></p>
+
+            {% if q.type == "single" %}
+                {% for option in q.options %}
+                    {% if option == q.answer %}
+                        <p class="correct">✔ {{ option }} (правильна)</p>
+                    {% elif option == answers[i] %}
+                        <p class="wrong">❌ {{ option }} (ваша відповідь)</p>
+                    {% else %}
+                        <p>{{ option }}</p>
+                    {% endif %}
+                {% endfor %}
+
+            {% elif q.type == "multiple" %}
+                {% for option in q.options %}
+                    {% if option in q.answers %}
+                        <p class="correct">✔ {{ option }} (правильна)</p>
+                    {% elif option in answers[i] %}
+                        <p class="wrong">❌ {{ option }} (ваша відповідь)</p>
+                    {% else %}
+                        <p>{{ option }}</p>
+                    {% endif %}
+                {% endfor %}
+
+            {% elif q.type == "open" %}
+                {% set user_answer = answers[i] | default('') %}
+                {% set correct_answer = q.keywords[0] if q.keywords else '' %}
+                {% if user_answer.lower() == correct_answer.lower() %}
+                    <p class="correct">✔ Ваша відповідь: {{ user_answer }}</p>
+                {% else %}
+                    <p class="wrong">❌ Ваша відповідь: {{ user_answer }}</p>
+                    <p>Правильна відповідь: {{ correct_answer }}</p>
+                {% endif %}
+
+            {% elif q.type == "matching" %}
+                <p style="opacity:0.6;">(Питання на відповідність — ще не оцінюється)</p>
+            {% endif %}
+
+        </div>
+        <hr>
+    {% endfor %}
+</div>
+
+<div class="buttons-row">
+    <a href="/result"><button>Назад</button></a>
+    <a href="/download_review_pdf"><button>📄 Завантажити PDF</button></a>
+    <a href="/results"><button>До результатів</button></a>
+</div>
+
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+function toggleTheme() {
+    let html = document.documentElement;
+    let icon = document.getElementById("theme-icon");
+
+    html.classList.toggle("dark-mode");
+
+    if (html.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        if (icon) icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        if (icon) icon.textContent = "🌞";
+    }
+}
+
+(function() {
+    let saved = localStorage.getItem("theme");
+    let icon = document.getElementById("theme-icon");
+    if (saved === "dark" && icon) {
+        icon.textContent = "🌙";
+    }
+})();
+</script>
+
+</body>
+</html>

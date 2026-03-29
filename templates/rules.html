@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <!-- тема -->
+    <script>
+        (function() {
+            let theme = localStorage.getItem("theme");
+            if (theme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+        })();
+    </script>
+
+    <title>Правила тесту</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- МОДАЛКА ПРАВИЛ -->
+<div id="rulesModal" class="modal" style="display:flex;">
+    <div class="modal-content">
+
+        <h3>📋 Правила тестування</h3>
+
+        <p>Будь ласка, уважно ознайомтесь:</p>
+
+        <ul style="text-align:left;">
+            <li>⏳ Час обмежений (60 хвилин)</li>
+            <li>🔀 Питання та відповіді перемішуються</li>
+            <li>❌ Заборонено копіювання (Ctrl+C)</li>
+            <li>❌ Заборонено звертатися та переміщатися між вкладками</li>
+            <li>⚠ Дозволено лише 2 порушення</li>
+            <li>⚠ Кожне порушення буде відображатися в таблиці результатів</li>
+            <li>🚫 3-тє порушення → автоматичне завершення тесту</li>
+        </ul>
+
+        <br>
+
+        <button onclick="continueTest()">Продовжити</button>
+        <button class="cancel" onclick="goBack()">Повернутися до реєстрації</button>
+
+    </div>
+</div>
+
+<!-- кнопка теми -->
+<div class="theme-toggle" id="themeToggle">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+// ===== ТЕМА =====
+const icon = document.getElementById("theme-icon");
+
+if (document.documentElement.classList.contains("dark-mode")) {
+    icon.textContent = "🌙";
+} else {
+    icon.textContent = "🌞";
+}
+
+document.getElementById("themeToggle").onclick = function() {
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+};
+
+// ===== кнопки =====
+function continueTest() {
+    window.location.href = "/test";
+}
+
+function goBack() {
+    window.location.href = "/";
+}
+</script>
+
+</body>
+</html>

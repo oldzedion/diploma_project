@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+    (function() {
+        let theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    })();
+</script>
+
+    <meta charset="UTF-8">
+    <title>Додати питання</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Додати нове питання</h2>
+
+    <form method="POST">
+
+        <input type="text" name="question" placeholder="Текст питання" required>
+
+        <select name="type" id="questionType" onchange="changeType()" required>
+            <option value="single">Одна правильна</option>
+            <option value="multiple">Кілька правильних</option>
+            <option value="open">Відкрите питання</option>
+        </select>
+
+        <!-- SINGLE / MULTIPLE -->
+        <div id="optionsBlock">
+            <div id="optionsContainer">
+                <input type="text" name="options" placeholder="Варіант 1">
+                <input type="text" name="options" placeholder="Варіант 2">
+            </div>
+
+            <div id="correctBlock">
+                <label>Правильна відповідь:</label>
+                <input type="radio" name="correct" value="0">
+                <input type="radio" name="correct" value="1">
+            </div>
+        </div>
+
+        <!-- OPEN -->
+        <div id="openBlock" style="display:none;">
+            <input type="text" name="keywords" placeholder="Ключові слова через кому">
+        </div>
+
+        <button type="button" onclick="addOption()">+ Додати варіант</button>
+        <button type="submit">Зберегти</button>
+
+    </form>
+
+    <br>
+    <a href="/admin/questions">
+        <button>← Назад</button>
+    </a>
+</div>
+
+<script>
+let optionCount = 2;
+
+function addOption() {
+    const container = document.getElementById("options-container");
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+        <input type="radio" name="correct" value="${optionCount}">
+        <input type="text" name="options" placeholder="Варіант ${optionCount + 1}" required>
+    `;
+
+    container.appendChild(div);
+    optionCount++;
+}
+</script>
+
+<!-- 🌙 ТЕМА -->
+<div class="theme-toggle" id="themeToggle">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+const icon = document.getElementById("theme-icon");
+let savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark-mode");
+    icon.textContent = "🌙";
+}
+
+document.getElementById("themeToggle").onclick = function() {
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+};
+</script>
+
+<script>
+function changeType() {
+    let type = document.getElementById("questionType").value;
+
+    document.getElementById("optionsBlock").style.display =
+        (type === "open") ? "none" : "block";
+
+    document.getElementById("openBlock").style.display =
+        (type === "open") ? "block" : "none";
+
+    updateCorrectInputs();
+}
+
+function addOption() {
+    let container = document.getElementById("optionsContainer");
+    let count = container.children.length;
+
+    let input = document.createElement("input");
+    input.type = "text";
+    input.name = "options";
+    input.placeholder = "Варіант " + (count + 1);
+
+    container.appendChild(input);
+
+    updateCorrectInputs();
+}
+
+function updateCorrectInputs() {
+    let type = document.getElementById("questionType").value;
+    let correctBlock = document.getElementById("correctBlock");
+    let count = document.getElementById("optionsContainer").children.length;
+
+    correctBlock.innerHTML = "<label>Правильні відповіді:</label><br>";
+
+    for (let i = 0; i < count; i++) {
+        let input = document.createElement("input");
+
+        input.type = (type === "multiple") ? "checkbox" : "radio";
+        input.name = "correct";
+        input.value = i;
+
+        correctBlock.appendChild(input);
+        correctBlock.append(" ");
+    }
+}
+</script>
+
+</body>
+</html>

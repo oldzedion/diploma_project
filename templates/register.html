@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+    (function() {
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    })();
+    </script>
+
+    <title>Реєстрація</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Реєстрація</h2>
+
+    <form method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <input type="text" name="fullname" placeholder="ПІБ" required>
+
+        <button type="submit">Продовжити</button>
+    </form>
+</div>
+
+        <a href="/admin/login">
+            <button>Адмін</button>
+        </a>
+
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+function toggleTheme() {
+    let html = document.documentElement;
+    let icon = document.getElementById("theme-icon");
+
+    html.classList.toggle("dark-mode");
+
+    if (html.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        if (icon) icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        if (icon) icon.textContent = "🌞";
+    }
+}
+
+// встановлення іконки при завантаженні (БЕЗ зміни теми)
+(function() {
+    let saved = localStorage.getItem("theme");
+    let icon = document.getElementById("theme-icon");
+
+    if (saved === "dark" && icon) {
+        icon.textContent = "🌙";
+    }
+})();
+</script>
+
+</body>
+</html>

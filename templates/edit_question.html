@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+    (function() {
+        let theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+    })();
+</script>
+
+    <meta charset="UTF-8">
+    <title>Редагувати питання</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Редагувати питання</h2>
+
+    <form method="POST">
+
+        <label>Питання:</label><br>
+        <input type="text" name="question" value="{{ question.text }}" required>
+
+        <br><br>
+
+        <label>Варіанти відповідей:</label><br>
+
+        <div id="options-container">
+            {% for opt in question.options %}
+                <div class="option-row">
+                    <input type="radio" name="correct" value="{{ loop.index0 }}"
+                        {% if opt.is_correct %}checked{% endif %}>
+                    <input type="text" name="options" value="{{ opt.text }}" required>
+                </div>
+            {% endfor %}
+        </div>
+
+        <br>
+
+        <button type="button" onclick="addOption()">+ Додати варіант</button>
+
+        <br><br>
+
+        <button type="submit">Зберегти</button>
+
+    </form>
+
+    <br>
+    <a href="/admin/questions">
+        <button>← Назад</button>
+    </a>
+</div>
+
+<script>
+
+    let optionCount = parseInt(
+        document.getElementById("options-container").dataset.count
+    );
+
+    function addOption() {
+    const container = document.getElementById("options-container");
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+        <input type="radio" name="correct" value="${optionCount}">
+        <input type="text" name="options" placeholder="Новий варіант" required>
+    `;
+
+    container.appendChild(div);
+    optionCount++;
+    }
+</script>
+
+<!-- 🌙 ТЕМА -->
+<div class="theme-toggle" id="themeToggle">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+const icon = document.getElementById("theme-icon");
+let savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark-mode");
+    icon.textContent = "🌙";
+}
+
+document.getElementById("themeToggle").onclick = function() {
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+};
+</script>
+
+</body>
+</html>

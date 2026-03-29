@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <script>
+        (function() {
+            let theme = localStorage.getItem("theme");
+            if (theme === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+        })();
+    </script>
+
+    <title>Адмін панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container wide">
+
+    <div class="header-row">
+        <h2>Адмін панель</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>ПІБ</th>
+            <th>Бали</th>
+            <th>Всього</th>
+            <th>%</th>
+            <th>Час</th>
+            <th>Порушення</th>
+            <th>Статус</th>
+            <th>Дії</th>
+            </tr>
+        </thead>
+<tbody>
+    {% for result in results %}
+    <tr>
+        <td>{{ result.id }}</td>
+        <td>{{ result.email }}</td>
+        <td>{{ result.fullname }}</td>
+        <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+            {{ result.score }}
+        </td>
+        <td>{{ result.total }}</td>
+
+        <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+                    {% if result.total > 0 %}
+                    {{ (result.score / result.total * 100)|round(0) }}%
+                    {% else %}
+                     0%
+                    {% endif %}
+        </td>
+
+        <td>
+            {{ (result.time_spent or 0) // 60 }} хв {{ (result.time_spent or 0) % 60 }} сек
+        </td>
+
+        <td>{{ result.violations }}</td>
+
+        <td class="{% if result.total > 0 and (result.score / result.total * 100) >= 50 %}pass{% else %}fail{% endif %}">
+                    {% if result.total > 0 and (result.score / result.total * 100) >= 50 %}
+                        ✔ Складено
+                    {% else %}
+                        ✖ Не складено
+                    {% endif %}
+        </td>
+
+        <td>
+            <button 
+                class="delete-btn"
+                onclick="openDeleteModal({{ result.id }})">
+                Видалити
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+    </table>
+
+    <div class="buttons-column">
+        <a href="/">
+            <button>На головну</button>
+        </a>
+    </div>
+    
+        <a href="/admin/questions">
+            <button>Керування питаннями</button>
+        </a>
+
+</div>
+
+<!-- 🌙 ТЕМА -->
+<div class="theme-toggle" onclick="toggleTheme()">
+    <span id="theme-icon">🌞</span>
+</div>
+
+<script>
+function toggleTheme() {
+    let icon = document.getElementById("theme-icon");
+
+    document.documentElement.classList.toggle("dark-mode");
+
+    if (document.documentElement.classList.contains("dark-mode")) {
+        localStorage.setItem("theme", "dark");
+        icon.textContent = "🌙";
+    } else {
+        localStorage.setItem("theme", "light");
+        icon.textContent = "🌞";
+    }
+}
+
+window.addEventListener("DOMContentLoaded", function() {
+    let savedTheme = localStorage.getItem("theme");
+    let icon = document.getElementById("theme-icon");
+
+    if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark-mode");
+        icon.textContent = "🌙";
+    }
+});
+</script>
+ 
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <p>Ви впевнені, що хочете видалити цей результат?</p>
+
+        <button id="confirmDelete">Так, видалити</button>
+        <button onclick="closeDeleteModal()" class="cancel">Скасувати</button>
+    </div>
+</div>
+
+<script>
+let deleteId = null;
+
+function openDeleteModal(id) {
+    deleteId = id;
+    document.getElementById("deleteModal").style.display = "flex";
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").style.display = "none";
+    deleteId = null;
+}
+
+document.getElementById("confirmDelete").addEventListener("click", function() {
+    if (deleteId !== null) {
+        window.location.href = "/admin/delete/" + deleteId;
+    }
+});
+</script>
+
+</body>
+</html>
