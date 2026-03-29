@@ -25,3 +25,7 @@ Thumbs.db
 
 # SSL keys
 nginx/ssl/*.key
+
+# Project specific
+results.db
+nginx/ssl/*
